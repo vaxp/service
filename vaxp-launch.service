@@ -1,0 +1,16 @@
+[Unit]
+Description=VAXP OS — Dynamic Session Launcher
+# يعمل بعد اكتمال جلسات المستخدمين وقبل graphical.target
+After=systemd-user-sessions.service plymouth-quit-wait.service
+Before=graphical.target
+# يمنع تشغيل getty@tty1 في نفس الوقت
+Conflicts=getty@tty1.service
+
+[Service]
+Type=oneshot
+# يبقى "نشطاً" طالما vaxp-session@<user>.service يعمل
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/vaxp-session launch
+
+[Install]
+WantedBy=graphical.target
