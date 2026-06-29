@@ -116,6 +116,13 @@ int cmd_run(const char* username) {
     setenv("DBUS_SESSION_BUS_ADDRESS", dbus_addr, 1);
     setenv("XDG_SESSION_TYPE", session_type, 1);
     
+    if (strcmp(session_type, "x11") == 0) {
+        setenv("DISPLAY", ":0", 0);
+        char xauth[MAX_PATH];
+        snprintf(xauth, sizeof(xauth), "%s/.Xauthority", pw->pw_dir);
+        setenv("XAUTHORITY", xauth, 0);
+    }
+
     if (strlen(session_desktop) == 0) {
         strcpy(session_desktop, session_cmd);
     }
@@ -132,6 +139,7 @@ int cmd_run(const char* username) {
 system(
     "systemctl --user import-environment "
     "DISPLAY "
+    "XAUTHORITY "
     "WAYLAND_DISPLAY "
     "XDG_CURRENT_DESKTOP "
     "XDG_SESSION_TYPE "
@@ -141,6 +149,7 @@ system(
 system(
     "dbus-update-activation-environment --systemd "
     "DISPLAY "
+    "XAUTHORITY "
     "WAYLAND_DISPLAY "
     "XDG_CURRENT_DESKTOP "
     "XDG_SESSION_TYPE "
@@ -163,10 +172,17 @@ system("systemctl --user start vaxp-session.target");
  * Replace current process with desktop
  * ------------------------------------------------------- */
 
+char final_cmd[512];
+if (strcmp(session_type, "x11") == 0) {
+    snprintf(final_cmd, sizeof(final_cmd), "startx %s", session_cmd);
+} else {
+    strncpy(final_cmd, session_cmd, sizeof(final_cmd));
+}
+
 char *args[] = {
     "sh",
     "-c",
-    session_cmd,
+    final_cmd,
     NULL
 };
 
